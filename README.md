@@ -144,3 +144,5 @@ except DiscordForgeAPIError as exc:
 - The client sends both `Authorization` and `x-api-key` headers when authentication is required.
 - `sync_commands` enforces DiscordForge limits (`1..200` commands).
 - For `discord.py`, prefer `AsyncDiscordForgeClient` to keep the bot loop responsive.
+
+

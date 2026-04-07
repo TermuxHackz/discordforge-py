@@ -3,11 +3,10 @@ Name: discordforge
 Version: 0.1.0
 Summary: Python client for DiscordForge REST API
 Author: Ram2
-License: MIT
+License-Expression: MIT
 Keywords: discord,bot,api,discordforge
 Classifier: Development Status :: 4 - Beta
 Classifier: Intended Audience :: Developers
-Classifier: License :: OSI Approved :: MIT License
 Classifier: Programming Language :: Python :: 3
 Classifier: Programming Language :: Python :: 3 :: Only
 Classifier: Programming Language :: Python :: 3.9
@@ -17,10 +16,12 @@ Classifier: Programming Language :: Python :: 3.12
 Classifier: Topic :: Software Development :: Libraries :: Python Modules
 Requires-Python: >=3.9
 Description-Content-Type: text/markdown
+License-File: LICENSE.txt
 Requires-Dist: requests>=2.31.0
 Provides-Extra: dev
 Requires-Dist: pytest>=8.0.0; extra == "dev"
 Requires-Dist: pytest-asyncio>=0.23.0; extra == "dev"
+Dynamic: license-file
 
 # discordforge
 
@@ -88,6 +89,26 @@ result = client.sync_commands(
 print(result.success, result.synced)
 ```
 
+## Easy Command Sync (discord.py)
+
+Use one call to map and sync your slash commands:
+
+```python
+import os
+from discordforge import DiscordForgeClient
+
+forge = DiscordForgeClient(api_key=os.environ["DISCORDFORGE_API_KEY"])
+
+# command_source can be bot.tree or an iterable of command objects.
+result = forge.sync_from_discordpy(
+    command_source=bot.tree,
+    category="General",
+    limit=200,        # auto-truncate to API max by default
+    strict_limit=False,
+)
+print(result.success, result.synced)
+```
+
 ## discord.py Async Example
 
 ```python
@@ -110,6 +131,11 @@ async def post_stats():
         server_count=len(bot.guilds),
         shard_count=getattr(bot, "shard_count", None),
     )
+
+@bot.event
+async def setup_hook():
+    # Easy one-call command sync from discord.py command tree.
+    await forge.sync_from_discordpy(command_source=bot.tree, category="General")
 ```
 
 ## Environment Variable Example
@@ -139,6 +165,23 @@ except DiscordForgeAPIError as exc:
 ## Notes
 
 - `sync_commands` accepts both DiscordForge custom command format and raw Discord API slash command format.
+- `sync_from_discordpy` maps command objects (`name`, `description`, `options`) and syncs in one call.
 - The client sends both `Authorization` and `x-api-key` headers when authentication is required.
 - `sync_commands` enforces DiscordForge limits (`1..200` commands).
 - For `discord.py`, prefer `AsyncDiscordForgeClient` to keep the bot loop responsive.
+
+## Packaging and Publish
+
+Build both sdist and wheel:
+
+```bash
+python -m pip install build twine
+python -m build
+twine check dist/*
+```
+
+Upload to PyPI:
+
+```bash
+twine upload dist/*
+```
