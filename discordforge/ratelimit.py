@@ -48,7 +48,7 @@ class RateLimitManager:
                 continue
             if all(
                 k == r or k.startswith("{")
-                for k, r in zip(parts_known, parts_route)
+                for k, r in zip(parts_known, parts_route, strict=False)
             ):
                 return known
         return route
