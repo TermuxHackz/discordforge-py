@@ -47,4 +47,4 @@ Use the [bug report template](.github/ISSUE_TEMPLATE/bug_report.md) when opening
 
 ## Questions?
 
-Join our [Discord server](https://discordforge.org/discord) or open a [discussion](https://github.com/discordforge/discordforge-py/discussions).
+Join our [Discord server](https://discord.gg/dfo) or open a [discussion](https://github.com/discordforge/discordforge-py/discussions).
