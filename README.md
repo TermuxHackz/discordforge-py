@@ -1,6 +1,24 @@
-# discordforge
+![DiscordForge](https://discordforge.org/images/logo.png)
 
-Python package for interacting with the DiscordForge REST API.
+# discordforge-py
+
+Python SDK for the [DiscordForge](https://discordforge.org) bot listing platform.  
+Fully async. Compatible with `discord.py` and other Python Discord libraries.
+
+[![PyPI version](https://img.shields.io/pypi/v/discordforge.svg?style=flat-square&cacheSeconds=300)](https://pypi.org/project/discordforge)
+[![PyPI downloads](https://img.shields.io/pypi/dm/discordforge.svg?style=flat-square&cacheSeconds=300)](https://pypi.org/project/discordforge)
+[![CI](https://img.shields.io/github/actions/workflow/status/discordforge/discordforge-py/test.yml?style=flat-square&cacheSeconds=300)](https://github.com/discordforge/discordforge-py/actions)
+[![license](https://img.shields.io/pypi/l/discordforge.svg?style=flat-square&cacheSeconds=300)](https://github.com/discordforge/discordforge-py/blob/main/LICENSE.txt)
+
+---
+
+## Installation
+
+```bash
+pip install discordforge
+```
+
+**Requirements:** Python 3.8 or higher.
 
 ## discord.py Compatibility
 
@@ -11,18 +29,6 @@ This package does not conflict with `discord.py` imports:
 
 Use `AsyncDiscordForgeClient` in `discord.py` bots to avoid blocking the event loop.
 
-## Install
-
-```bash
-pip install -e .
-```
-
-For development tools:
-
-```bash
-pip install -e ".[dev]"
-```
-
 ## Quick Start
 
 ```python
@@ -30,61 +36,55 @@ from discordforge import DiscordForgeClient
 
 client = DiscordForgeClient(api_key="YOUR_API_KEY")
 
-# POST /api/bots/stats
+# Post your bot stats
 client.post_bot_stats(server_count=1500, shard_count=5, user_count=50000)
 
-# GET /api/bots/:id/votes/check?userId=...
+# Check if a user voted
 vote = client.check_vote(bot_id="YOUR_BOT_ID", user_id="USER_ID")
-print(vote.has_voted, vote.voted_at, vote.next_vote_at)
+if vote.has_voted:
+    print("Thanks for voting!")
 
-# GET /api/bots/:id (public endpoint, no API key required)
-public_client = DiscordForgeClient()
-bot = public_client.get_bot(bot_id="YOUR_BOT_ID")
-print(bot.id, bot.name, bot.vote_count, bot.server_count)
-
-# POST /api/external/bots/commands
-result = client.sync_commands(
-    commands=[
-        {
-            "name": "ban",
-            "description": "Ban a user from the server",
-            "usage": "/ban <user> [reason]",
-            "category": "Moderation",
-        },
-        {
-            "name": "play",
-            "description": "Play a song in your voice channel",
-            "type": 1,
-            "options": [
-                {"name": "query", "type": 3, "required": True},
-            ],
-        },
-    ]
-)
-print(result.success, result.synced)
+# Fetch your bot's public profile (no API key required)
+bot = client.get_bot(bot_id="YOUR_BOT_ID")
+print(f"{bot.name} — {bot.vote_count} votes")
 ```
 
-## Easy Command Sync (discord.py)
+## API Reference
 
-Use one call to map and sync your slash commands:
+### `DiscordForgeClient(api_key?)`
+
+Synchronous client. Use for scripts and non-async bots.
+
+### `AsyncDiscordForgeClient(api_key?)`
+
+Async client. Use with `discord.py` and other async frameworks.
+
+### Methods
+
+| Method | Returns | Description | Rate Limit |
+|--------|---------|-------------|------------|
+| `post_bot_stats(server_count, shard_count?, user_count?, voice_connections?)` | `None` | Update your bot's stats | 1 req / 5 min |
+| `check_vote(bot_id, user_id)` | `VoteResult` | Check if a user voted in the last 12h | 60 req / min |
+| `get_bot(bot_id)` | `BotInfo` | Fetch your bot's public profile | — |
+| `sync_commands(commands)` | `SyncResult` | Sync up to 200 slash commands | — |
+| `sync_from_discordpy(command_source, category?, limit?, strict_limit?)` | `SyncResult` | Map and sync from a `discord.py` command tree | — |
+
+### Error Handling
 
 ```python
-import os
-from discordforge import DiscordForgeClient
+from discordforge import DiscordForgeClient, DiscordForgeAPIError, DiscordForgeValidationError
 
-forge = DiscordForgeClient(api_key=os.environ["DISCORDFORGE_API_KEY"])
+client = DiscordForgeClient(api_key="YOUR_API_KEY")
 
-# command_source can be bot.tree or an iterable of command objects.
-result = forge.sync_from_discordpy(
-    command_source=bot.tree,
-    category="General",
-    limit=200,        # auto-truncate to API max by default
-    strict_limit=False,
-)
-print(result.success, result.synced)
+try:
+    client.post_bot_stats(server_count=1500)
+except DiscordForgeValidationError as exc:
+    print("Invalid input:", exc)
+except DiscordForgeAPIError as exc:
+    print(f"API error {exc.status_code}:", exc)
 ```
 
-## discord.py Async Example
+## Usage with discord.py
 
 ```python
 import os
@@ -101,7 +101,6 @@ async def on_ready():
 
 @tasks.loop(minutes=5)
 async def post_stats():
-    # Keep this endpoint at 1 request per 5 minutes.
     await forge.post_bot_stats(
         server_count=len(bot.guilds),
         shard_count=getattr(bot, "shard_count", None),
@@ -109,40 +108,49 @@ async def post_stats():
 
 @bot.event
 async def setup_hook():
-    # Easy one-call command sync from discord.py command tree.
     await forge.sync_from_discordpy(command_source=bot.tree, category="General")
+
+bot.run(os.environ["BOT_TOKEN"])
 ```
 
-## Environment Variable Example
+## Syncing Slash Commands
+
+The SDK accepts both DiscordForge custom format and raw Discord API format — auto-detected per command.
 
 ```python
-import os
-from discordforge import DiscordForgeClient
-
-client = DiscordForgeClient(api_key=os.environ["DISCORDFORGE_API_KEY"])
+result = client.sync_commands(
+    commands=[
+        {
+            "name": "ban",
+            "description": "Ban a user from the server",
+            "usage": "/ban <user> [reason]",
+            "category": "Moderation",
+        },
+        {
+            "name": "play",
+            "description": "Play a song in your voice channel",
+            "type": 1,
+            "options": [{"name": "query", "type": 3, "required": True}],
+        },
+    ]
+)
+print(result.success, result.synced)
 ```
 
-## Error Handling
+Each sync **replaces** all previously synced commands. Max 200 commands per request.
 
-```python
-from discordforge import DiscordForgeClient, DiscordForgeAPIError, DiscordForgeValidationError
+## Contributing
 
-client = DiscordForgeClient(api_key="YOUR_API_KEY")
+Contributions are welcome! Please read [CONTRIBUTING.md](CONTRIBUTING.md) before submitting a PR.
 
-try:
-    client.post_bot_stats(server_count=1500)
-except DiscordForgeValidationError as exc:
-    print("Invalid input:", exc)
-except DiscordForgeAPIError as exc:
-    print("DiscordForge request failed:", exc.status_code, exc)
-```
+Originally created by [Ram2](https://github.com/Antiscammer-Dev-team).
 
-## Notes
+## Links
 
-- `sync_commands` accepts both DiscordForge custom command format and raw Discord API slash command format.
-- `sync_from_discordpy` maps command objects (`name`, `description`, `options`) and syncs in one call.
-- The client sends both `Authorization` and `x-api-key` headers when authentication is required.
-- `sync_commands` enforces DiscordForge limits (`1..200` commands).
-- For `discord.py`, prefer `AsyncDiscordForgeClient` to keep the bot loop responsive.
+- [DiscordForge Dashboard](https://discordforge.org/dashboard)
+- [API Documentation](https://discordforge.org/support/developers)
+- [PyPI Package](https://pypi.org/project/discordforge)
 
+## License
 
+[MIT](LICENSE.txt) © DiscordForge
