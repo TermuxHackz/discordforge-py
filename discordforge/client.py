@@ -81,7 +81,7 @@ class ForgeClient:
         raw: Iterable[Any]
         get_commands = getattr(command_source, "get_commands", None)
         if callable(get_commands):
-            raw = get_commands()
+            raw = get_commands()  # type: ignore[assignment]
         elif hasattr(command_source, "__iter__"):
             raw = command_source
         else:

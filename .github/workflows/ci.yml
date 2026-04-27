@@ -17,8 +17,8 @@ jobs:
         with:
           python-version: "3.12"
 
-      - name: Install linters
-        run: pip install ruff pyright
+      - name: Install package + linters
+        run: pip install -e ".[dev]" ruff pyright
 
       - name: ruff check (lint + syntax)
         run: ruff check discordforge/ tests/

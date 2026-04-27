@@ -134,7 +134,7 @@ class AutoPoster:
         wait_for = getattr(self._discord, "wait_for", None)
         if callable(wait_for):
             try:
-                await wait_for("ready", timeout=300.0)
+                await wait_for("ready", timeout=300.0)  # type: ignore[misc]
                 return
             except TimeoutError:
                 log.warning("AutoPoster: timed out waiting for ready event, posting anyway.")
