@@ -42,7 +42,9 @@ async def test_post_stats_rejects_negative_server_count():
 @respx.mock
 async def test_check_vote_has_voted():
     respx.get(f"{BASE}/api/bots/123456789/votes/check").mock(
-        return_value=httpx.Response(200, json={"hasVoted": True, "votedAt": "2026-04-27T10:00:00Z", "nextVoteAt": None})
+        return_value=httpx.Response(
+            200, json={"hasVoted": True, "votedAt": "2026-04-27T10:00:00Z", "nextVoteAt": None}
+        )
     )
     async with make_client() as client:
         meta = await client.check_vote("987654321")
@@ -54,7 +56,9 @@ async def test_check_vote_has_voted():
 @respx.mock
 async def test_check_vote_not_voted():
     respx.get(f"{BASE}/api/bots/123456789/votes/check").mock(
-        return_value=httpx.Response(200, json={"hasVoted": False, "votedAt": None, "nextVoteAt": None})
+        return_value=httpx.Response(
+            200, json={"hasVoted": False, "votedAt": None, "nextVoteAt": None}
+        )
     )
     async with make_client() as client:
         meta = await client.check_vote("111")
@@ -72,7 +76,9 @@ async def test_check_vote_requires_bot_id():
 @respx.mock
 async def test_get_bot():
     respx.get(f"{BASE}/api/bots/123456789").mock(
-        return_value=httpx.Response(200, json={"id": "123456789", "name": "TestBot", "voteCount": 42, "serverCount": 500})
+        return_value=httpx.Response(
+            200, json={"id": "123456789", "name": "TestBot", "voteCount": 42, "serverCount": 500}
+        )
     )
     async with make_client() as client:
         info = await client.get_bot()
@@ -84,6 +90,7 @@ async def test_get_bot():
 @respx.mock
 async def test_sync_commands_success():
     from discordforge import DiscordCommand
+
     respx.post(f"{BASE}/api/external/bots/commands").mock(
         return_value=httpx.Response(200, json={"success": True, "synced": 2})
     )
@@ -106,6 +113,7 @@ async def test_sync_commands_rejects_empty():
 @pytest.mark.asyncio
 async def test_sync_commands_rejects_over_200():
     from discordforge import DiscordCommand
+
     cmds = [DiscordCommand(name=f"cmd{i}", description="desc") for i in range(201)]
     async with make_client() as client:
         with pytest.raises(ValueError, match="200"):
@@ -156,7 +164,9 @@ async def test_rate_limit_retries():
         nonlocal call_count
         call_count += 1
         if call_count == 1:
-            return httpx.Response(429, headers={"retry-after": "0"}, json={"message": "rate limited"})
+            return httpx.Response(
+                429, headers={"retry-after": "0"}, json={"message": "rate limited"}
+            )
         return httpx.Response(200, json={"success": True})
 
     respx.post(f"{BASE}/api/bots/stats").mock(side_effect=handler)

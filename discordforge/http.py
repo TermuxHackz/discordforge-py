@@ -139,4 +139,4 @@ class HTTPClient:
 
     @staticmethod
     async def _backoff(attempt: int) -> None:
-        await asyncio.sleep(min(2 ** attempt, 30))
+        await asyncio.sleep(min(2**attempt, 30))

@@ -19,10 +19,9 @@ ErrorCallback = Callable[[Exception], Awaitable[None] | None]
 
 
 def _collect_stats(discord_client: Any) -> BotStats:
-    server_count: int = (
-        getattr(getattr(discord_client, "guilds", None), "__len__", lambda: 0)()
-        or len(getattr(discord_client, "guilds", []))
-    )
+    server_count: int = getattr(
+        getattr(discord_client, "guilds", None), "__len__", lambda: 0
+    )() or len(getattr(discord_client, "guilds", []))
 
     shard_count: int | None = getattr(discord_client, "shard_count", None)
     if shard_count is None:

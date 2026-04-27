@@ -8,7 +8,7 @@ from dataclasses import dataclass, field
 # have to hit a 429 to discover the limit.
 # Format: "METHOD:/path" -> (limit, window_seconds)
 _KNOWN_LIMITS: dict[str, tuple[int, float]] = {
-    "POST:/api/bots/stats": (1, 300.0),           # 1 req / 5 min
+    "POST:/api/bots/stats": (1, 300.0),  # 1 req / 5 min
     "GET:/api/bots/{bot_id}/votes/check": (60, 60.0),  # 60 req / min
 }
 
@@ -47,8 +47,7 @@ class RateLimitManager:
             if len(parts_known) != len(parts_route):
                 continue
             if all(
-                k == r or k.startswith("{")
-                for k, r in zip(parts_known, parts_route, strict=False)
+                k == r or k.startswith("{") for k, r in zip(parts_known, parts_route, strict=False)
             ):
                 return known
         return route

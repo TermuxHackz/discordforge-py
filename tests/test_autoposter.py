@@ -99,7 +99,9 @@ async def test_autoposter_calls_error_callback_on_failure():
         return_value=httpx.Response(500, json={"message": "fail"})
     )
 
-    forge = ForgeClient("key", bot_id="123", options=ClientOptions(retries=0, seed_known_limits=False))
+    forge = ForgeClient(
+        "key", bot_id="123", options=ClientOptions(retries=0, seed_known_limits=False)
+    )
     discord = FakeDiscordClient()
     poster = AutoPoster(forge, discord, interval=300.0, start_immediately=True)
 
@@ -111,6 +113,7 @@ async def test_autoposter_calls_error_callback_on_failure():
     poster.start()
 
     import contextlib
+
     with contextlib.suppress(TimeoutError, asyncio.CancelledError):
         await asyncio.wait_for(asyncio.shield(poster._task), timeout=5.0)  # type: ignore[arg-type]
     await forge.close()
